@@ -2,7 +2,8 @@ import os
 import sys
 import random  
 import pygame as pg
-import time  
+import time
+import math  
 
 
 WIDTH, HEIGHT = 1100, 650
@@ -72,13 +73,13 @@ def get_kk_imgs() -> dict[tuple[int, int], pg.Surface]:
     """
     kk_img = pg.image.load("fig/3.png")
     # デフォルト（右向き）を基準に反転や回転を行う
-    kk_img_flip = pg.transform.flip(kk_img, True, False) # 右向き
+    kk_img_flip = pg.transform.flip(kk_img, True, False) # 右
     
     kk_dict = {
-        ( 0,  0): pg.transform.rotozoom(kk_img, 0, 0.9),      # 静止（左向き）
+        ( 0,  0): pg.transform.rotozoom(kk_img, 0, 0.9),      # 静止
         (-5,  0): pg.transform.rotozoom(kk_img, 0, 0.9),      # 左
         (-5, -5): pg.transform.rotozoom(kk_img, -45, 0.9),    # 左上
-        ( 0, -5): pg.transform.rotozoom(kk_img_flip, 90, 0.9), # 上（右向きを90度）
+        ( 0, -5): pg.transform.rotozoom(kk_img_flip, 90, 0.9), # 上
         (+5, -5): pg.transform.rotozoom(kk_img_flip, 45, 0.9), # 右上
         (+5,  0): pg.transform.rotozoom(kk_img_flip, 0, 0.9),  # 右
         (+5, +5): pg.transform.rotozoom(kk_img_flip, -45, 0.9),# 右下
@@ -86,6 +87,20 @@ def get_kk_imgs() -> dict[tuple[int, int], pg.Surface]:
         (-5, +5): pg.transform.rotozoom(kk_img, 45, 0.9),     # 左下
     }
     return kk_dict
+
+def calc_orientation(org: pg.Rect, dst: pg.Rect, current_xy: tuple[float, float]) -> tuple[float, float]:
+    """
+    爆弾から見て、こうかとんがある方向のベクトルを返す
+    引数1 org：爆弾Rect、引数2 dst：こうかとんRect、引数3 current_xy：現在の速度
+    """
+    diff_x, diff_y = dst.centerx - org.centerx, dst.centery - org.centery
+
+    norm = math.sqrt(diff_x**2 + diff_y**2)
+    
+    if norm < 300:
+        return current_xy
+    
+    return diff_x * math.sqrt(50) / norm, diff_y * math.sqrt(50) / norm
 
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
@@ -98,7 +113,7 @@ def main():
     kk_rct.center = 300, 200
 
     bb_imgs, bb_accs = init_bb_imgs()
-    bb_img = bb_imgs[0]  # 初期状態の爆弾
+    bb_img = bb_imgs[0]  
     bb_rct = bb_img.get_rect()
     bb_rct.centerx = random.randint(0, WIDTH)
     bb_rct.centery = random.randint(0, HEIGHT)
@@ -112,6 +127,8 @@ def main():
             if event.type == pg.QUIT: 
                 return
         screen.blit(bg_img, [0, 0]) 
+
+        vx, vy = calc_orientation(bb_rct, kk_rct, (vx, vy))
 
         idx = min(tmr // 300, 9)  # 300フレームごとに段階を上げる（最大9）
         bb_img = bb_imgs[idx]
