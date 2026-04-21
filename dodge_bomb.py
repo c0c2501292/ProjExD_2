@@ -5,7 +5,6 @@ import pygame as pg
 import time
 import math  
 
-
 WIDTH, HEIGHT = 1100, 650
 
 DELTA = {
@@ -31,26 +30,21 @@ def check_bound(rct: pg.Rect) -> tuple[bool, bool]:
     return yoko, tate
 
 def gameover(screen: pg.Surface) -> None:    #ゲームオーバー画面を表示する関数
-
     black_scr = pg.Surface((WIDTH, HEIGHT))
     pg.draw.rect(black_scr, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
     black_scr.set_alpha(200)
-
     font = pg.font.Font(None, 80)
     txt = font.render("Game Over", True, (255, 255, 255))
     txt_rct = txt.get_rect()
     txt_rct.center = WIDTH // 2, HEIGHT // 2
     black_scr.blit(txt, txt_rct)
-
-
     kk_cry = pg.image.load("fig/8.png") 
     black_scr.blit(kk_cry, [WIDTH // 2 - 250, HEIGHT // 2 - 40]) # 左側
     black_scr.blit(kk_cry, [WIDTH // 2 + 200, HEIGHT // 2 - 40]) # 右側
-
     screen.blit(black_scr, [0, 0])
-
     pg.display.update()
     time.sleep(5)
+
 
 def init_bb_imgs() -> tuple[list[pg.Surface], list[int]]:
     """
@@ -63,9 +57,9 @@ def init_bb_imgs() -> tuple[list[pg.Surface], list[int]]:
         pg.draw.circle(bb_img, (255, 0, 0), (10*r, 10*r), 10*r)
         bb_img.set_colorkey((0, 0, 0))
         bb_imgs.append(bb_img)
-    
     bb_accs = [a for a in range(1, 11)]
     return bb_imgs, bb_accs
+
 
 def get_kk_imgs() -> dict[tuple[int, int], pg.Surface]:
     """
@@ -73,8 +67,7 @@ def get_kk_imgs() -> dict[tuple[int, int], pg.Surface]:
     """
     kk_img = pg.image.load("fig/3.png")
     # デフォルト（右向き）を基準に反転や回転を行う
-    kk_img_flip = pg.transform.flip(kk_img, True, False) # 右
-    
+    kk_img_flip = pg.transform.flip(kk_img, True, False) # 右    
     kk_dict = {
         ( 0,  0): pg.transform.rotozoom(kk_img, 0, 0.9),      # 静止
         (-5,  0): pg.transform.rotozoom(kk_img, 0, 0.9),      # 左
@@ -88,30 +81,27 @@ def get_kk_imgs() -> dict[tuple[int, int], pg.Surface]:
     }
     return kk_dict
 
-def calc_orientation(org: pg.Rect, dst: pg.Rect, current_xy: tuple[float, float]) -> tuple[float, float]:
+
+def calc_orientation(org: pg.Rect, dst: pg.Rect, current_xy:tuple[float, float]) -> tuple[float, float]:
     """
     爆弾から見て、こうかとんがある方向のベクトルを返す
     引数1 org：爆弾Rect、引数2 dst：こうかとんRect、引数3 current_xy：現在の速度
     """
     diff_x, diff_y = dst.centerx - org.centerx, dst.centery - org.centery
-
     norm = math.sqrt(diff_x**2 + diff_y**2)
-    
     if norm < 300:
         return current_xy
-    
     return diff_x * math.sqrt(50) / norm, diff_y * math.sqrt(50) / norm
+
 
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load("fig/pg_bg.jpg") 
-
     kk_imgs = get_kk_imgs()
     kk_img = kk_imgs[(0, 0)]
     kk_rct = kk_img.get_rect()
     kk_rct.center = 300, 200
-
     bb_imgs, bb_accs = init_bb_imgs()
     bb_img = bb_imgs[0]  
     bb_rct = bb_img.get_rect()
