@@ -29,30 +29,42 @@ def check_bound(rct: pg.Rect) -> tuple[bool, bool]:
         tate = False
     return yoko, tate
 
-def gameover(screen: pg.Surface) -> None:
-    #ゲームオーバー画面を表示する関数
+def gameover(screen: pg.Surface) -> None:    #ゲームオーバー画面を表示する関数
+
     black_scr = pg.Surface((WIDTH, HEIGHT))
     pg.draw.rect(black_scr, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
-    black_scr.set_alpha(200) # 半透明にする
+    black_scr.set_alpha(200)
 
-    # 3. 白文字でGame Overと書かれたフォントSurfaceを作り，1のSurfaceにblitする
     font = pg.font.Font(None, 80)
     txt = font.render("Game Over", True, (255, 255, 255))
     txt_rct = txt.get_rect()
     txt_rct.center = WIDTH // 2, HEIGHT // 2
     black_scr.blit(txt, txt_rct)
 
-    # 4. こうかとん画像をロードし，こうかとんSurfaceを作り，1のSurfaceにblitする
-    kk_cry = pg.image.load("fig/8.png") # 泣いているこうかとん
+
+    kk_cry = pg.image.load("fig/8.png") 
     black_scr.blit(kk_cry, [WIDTH // 2 - 250, HEIGHT // 2 - 40]) # 左側
     black_scr.blit(kk_cry, [WIDTH // 2 + 200, HEIGHT // 2 - 40]) # 右側
 
-    # 5. 1のSurfaceをscreen Surfaceにblitする
     screen.blit(black_scr, [0, 0])
 
-    # 6. pg.display.update()したら，time.sleep(5)する
     pg.display.update()
     time.sleep(5)
+
+def init_bb_imgs() -> tuple[list[pg.Surface], list[int]]:
+    """
+    10段階の大きさと加速度を持つ爆弾リストを返す
+    戻り値: (爆弾Surfaceのリスト, 加速度のリスト)
+    """
+    bb_imgs = []
+    for r in range(1, 11):
+        bb_img = pg.Surface((20*r, 20*r))
+        pg.draw.circle(bb_img, (255, 0, 0), (10*r, 10*r), 10*r)
+        bb_img.set_colorkey((0, 0, 0))
+        bb_imgs.append(bb_img)
+    
+    bb_accs = [a for a in range(1, 11)]
+    return bb_imgs, bb_accs
 
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
@@ -62,13 +74,12 @@ def main():
     kk_rct = kk_img.get_rect()
     kk_rct.center = 300, 200
 
-    bb_img = pg.Surface((20, 20))  # 爆弾用の空のSurfaceを作る
-    pg.draw.circle(bb_img, (255, 0, 0), (10, 10), 10)  # 爆弾円を描く
-    bb_img.set_colorkey((0, 0, 0))  # 爆弾の黒い部分を透過させる
-    bb_rct = bb_img.get_rect()  # 爆弾Rectを取得する
-    bb_rct.centerx = random.randint(0, WIDTH)  # 爆弾の初期横座標を設定する
-    bb_rct.centery = random.randint(0, HEIGHT)  # 爆弾の初期縦座標を設定する
-    vx, vy = +5, +5  # 爆弾の速度
+    bb_imgs, bb_accs = init_bb_imgs()
+    bb_img = bb_imgs[0]  # 初期状態の爆弾
+    bb_rct = bb_img.get_rect()
+    bb_rct.centerx = random.randint(0, WIDTH)
+    bb_rct.centery = random.randint(0, HEIGHT)
+    vx, vy = +5, +5
 
 
     clock = pg.time.Clock()
@@ -78,6 +89,11 @@ def main():
             if event.type == pg.QUIT: 
                 return
         screen.blit(bg_img, [0, 0]) 
+
+        idx = min(tmr // 500, 9)  # 500フレームごとに段階を上げる（最大9）
+        bb_img = bb_imgs[idx]
+        avx = vx * bb_accs[idx]
+        avy = vy * bb_accs[idx]
 
         key_lst = pg.key.get_pressed()
         sum_mv = [0, 0]
@@ -93,13 +109,17 @@ def main():
             kk_rct.move_ip(-sum_mv[0], -sum_mv[1])
 
         screen.blit(kk_img, kk_rct)
-        bb_rct.move_ip(vx, vy)  # 爆弾を移動させる
+        bb_rct.move_ip(avx, avy)
 
         yoko, tate = check_bound(bb_rct)
         if not yoko:  # 横方向
             vx *= -1
         if not tate:  # 縦方向
             vy *= -1
+        
+        curr_center = bb_rct.center
+        bb_rct = bb_img.get_rect()
+        bb_rct.center = curr_center
             
         screen.blit(bb_img, bb_rct)  # 爆弾を表示させる
         
